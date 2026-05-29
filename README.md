@@ -1,4 +1,4 @@
-# fcsh (Friendly C-shell)
+# fcsh (Fast C-shell)
 A friendly and fast C-shell made for Unix/Linux platform.
 
 > [!NOTE]
