@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <signal.h>
 
 #include "lib/sout.h"
 
@@ -20,42 +20,62 @@ int main() {
     char buffer[1024];
     int position = 0;
     char character;
-    char prompt[] = "fcsh> ";
+    char prompt[] = "fash ~> ";
     enableRaw(&cookedTerminal);
+    
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGINT, &sa, NULL);
 
     sout("%s", prompt);
 
     while (1) {
-        if (read(STDIN_FILENO, &character, 1) == 1) {
-            // Enter key (ASCII 13)
-            if (character == 13) {
-                if (character == 13 || character == 10) {
-                    buffer[position] = '\0';
-                
-                    sout("\r\n");
-                
-                    if (position > 0) {
-                        execute(buffer);
-                    }
-                
-                    sout("%s", prompt);
-                
-                    position = 0;
-                }
-            } 
-            // Backspace (ASCII 127)
-            else if (character == 127) {
-                if (position > 0) {
-                    position--;
-                    sout("\b \b");
-                }
-            } 
-            
-            else if (position < 1023) {
-                buffer[position++] = character;
-                sout("%c", character);
+        int bytes = read(STDIN_FILENO, &character, 1);
+        if (bytes == -1) {
+            if (errno == EINTR) {
+                sout("\r\n");
+                position = 0;
+                sout("%s", prompt);
+                continue;
             }
+            break;
         }
+
+        if (bytes == 0) continue;
+       
+        // Enter key (ASCII 13)
+        if (character == 13) {
+            if (character == 13 || character == 10) {
+                buffer[position] = '\0';
+                
+                sout("\r\n");
+                
+                if (position > 0) {
+                    execute(buffer);
+                }
+                
+                sout("%s", prompt);
+                
+                position = 0;
+            }
+        } 
+        
+        // Backspace (ASCII 127)
+        else if (character == 127) {
+            if (position > 0) {
+                position--;
+                sout("\b \b");
+            }
+        } 
+            
+        else if (position < 1023) {
+            buffer[position++] = character;
+            sout("%c", character);
+        }
+
+
     }
 
     disableRaw(&cookedTerminal);
@@ -98,17 +118,35 @@ void execute(char *buffer) {
     if (argv[0] == NULL) return;
     disableRaw(&cookedTerminal);
 
+    
+    // Fash standard commands
+    if (strcmp(buffer, "exit") == 0) {
+        sout("exit\r\n");
+        disableRaw(&cookedTerminal);
+        exit(0);
+    }
+
     pid_t pid = fork();
     if (pid == 0) {
-        execvp(argv[0], argv);
+        struct sigaction sa;
+        sa.sa_handler = SIG_DFL;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        sigaction(SIGINT, &sa, NULL);
         
+
+        execvp(argv[0], argv);
         if (errno == ENOENT) {
-            sout("\r\nfcsh: %s: command not found\r\n", buffer);
+            sout("\r\nfash: %s: command not found\r\n", buffer);
         }
         exit(1);
+
+
     } else if (pid > 0) {
         wait(NULL);
     }
 
+
     enableRaw(&cookedTerminal);
+
 }
