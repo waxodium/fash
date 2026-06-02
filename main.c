@@ -97,21 +97,29 @@ int main() {
 
         default:
             if (length < 1023) {
-                for (int i = length; i > cursor; i--) {
-                    buffer[i] = buffer[i - 1];
-                }
-                
-                buffer[cursor] = character;
-                cursor++;
-                length++;
-                buffer[length] = '\0';
-        
-                sout("\r\033[K%s%s", prompt, buffer);
-                for (int i = 0; i < (length - cursor); i++) {
-                    sout("\033[D");
+                if (cursor == length) {
+                    buffer[cursor] = character;
+                    cursor++;
+                    length++;
+                    buffer[length] = '\0';
+                    
+                    sout("%c", character); 
+                } else {
+                    for (int i = length; i > cursor; i--) {
+                        buffer[i] = buffer[i - 1];
+                    }
+                    
+                    buffer[cursor] = character;
+                    cursor++;
+                    length++;
+                    buffer[length] = '\0';
+            
+                    sout("\r\033[K%s%s", prompt, buffer);
+                    for (int i = 0; i < (length - cursor); i++)
+                        sout("\033[D");
+                    
                 }
             }
-            break;
         }
     }
 
@@ -148,13 +156,19 @@ void execute(char *buffer) {
     argv[b] = NULL;
 
     if (argv[0] == NULL) return;
-    disableRaw(&cookedTerminal);
+
+    if (strcmp(argv[0], "cls") == 0) {
+        sout("\033[H\033[J");
+        return; 
+    }
 
     if (strcmp(argv[0], "exit") == 0) {
         sout("exit\r\n");
-        disableRaw(&cookedTerminal);
+        disableRaw(&cookedTerminal); 
         exit(0);
     }
+
+    disableRaw(&cookedTerminal);
 
     pid_t pid = fork();
     if (pid == 0) {
@@ -172,9 +186,9 @@ void execute(char *buffer) {
     } else if (pid > 0) {
         wait(NULL);
     }
+    
     enableRaw(&cookedTerminal);
 }
-
 
 
 void arrows(char *inputBuffer, int *cursor, int *inputLength, char *prompt, int *total, int *historyIndex, char historyList[10][1024]) {
