@@ -78,10 +78,12 @@ int main() {
                 length--;
                 buffer[length] = '\0';
         
+                sout("\033[?25l");
                 sout("\r\033[K%s%s", prompt, buffer);
                 for (int i = 0; i < (length - cursor); i++) {
                     sout("\033[D");
                 }
+                sout("\033[?25h");
             }
             break;
 
@@ -102,8 +104,7 @@ int main() {
                     cursor++;
                     length++;
                     buffer[length] = '\0';
-                    
-                    sout("%c", character); 
+                    sout("%c", character);
                 } else {
                     for (int i = length; i > cursor; i--) {
                         buffer[i] = buffer[i - 1];
@@ -114,12 +115,15 @@ int main() {
                     length++;
                     buffer[length] = '\0';
             
+                    sout("\033[?25l");
                     sout("\r\033[K%s%s", prompt, buffer);
                     for (int i = 0; i < (length - cursor); i++)
                         sout("\033[D");
                     
+                    sout("\033[?25h");
                 }
             }
+            break;
         }
     }
 
