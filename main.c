@@ -21,10 +21,44 @@ int historyView = 0;
 struct termios cookedTerminal;
 
 
+void prompter(char *prompt_buffer, size_t max_len) {
+    char host[64];
+    char cwd[1024];
+    
+    const char *user = getenv("USER");
+    if (!user) 
+        user = "user";
+    
+    if (gethostname(host, sizeof(host)) != 0) {
+        strcpy(host, "unknown");
+    }
+
+    if (!getcwd(cwd, sizeof(cwd))) {
+        strcpy(cwd, "?");
+    }
+
+    char *home = getenv("HOME");
+    size_t home_length;
+
+    if (home != NULL) {
+        home_length = strlen(home);
+    } else {
+        home_length = 0;
+    }
+
+    if (home_length > 0 && strncmp(cwd, home, home_length) == 0) {
+        char *path_remainder = cwd + home_length;
+        snprintf(prompt_buffer, max_len, "%s@%s:~%s > ", user, host, path_remainder);
+    } else {
+        snprintf(prompt_buffer, max_len, "%s@%s:%s > ", user, host, cwd);
+    }
+}
+
 int main() {
     char character;
     ShellState state;
-    char prompt[] = "fash ~> ";
+    char prompt[256];
+    prompter(prompt, sizeof(prompt));
 
     enableRaw(&cookedTerminal);
 
@@ -48,6 +82,7 @@ int main() {
         if (bytes <= 0) continue;
 
         int old_cursor = state.cursor;
+        int renderAble = 0;
 
         switch (character) {
         
@@ -70,13 +105,14 @@ int main() {
                 }
 
                 execute(state.buffer);
+                prompter(prompt, sizeof(prompt));
             }
             
             historyView = historyCount;
             
             render_init(&state, prompt);
             sout("%s", prompt);
-            continue; 
+            continue;
 
         // BackSpace
         case 127:
@@ -87,6 +123,8 @@ int main() {
                 state.cursor--;
                 state.length--;
                 state.buffer[state.length] = '\0';
+                
+                renderAble = 1;    
             }
             break; 
 
@@ -100,13 +138,20 @@ int main() {
                 break;
             }
 
-            // Command History
+            // Right Arrow
             if (seq[1] == 'C') {
-                if (state.cursor < state.length) state.cursor++;
-            } else if (seq[1] == 'D') {
-                if (state.cursor > 0) state.cursor--;
+                if (state.cursor < state.length) {
+                    state.cursor++;
+                    renderAble = 1;
+                }
+            } 
+            // Left Arrow
+            else if (seq[1] == 'D') {
+                if (state.cursor > 0) {
+                    state.cursor--;
+                    renderAble = 1;
+                }
             }
-            
             // Up Arrow
             else if (seq[1] == 'A') {
                 if (historyView > 0) {
@@ -114,11 +159,9 @@ int main() {
                     strcpy(state.buffer, history[historyView]);
                     state.length = strlen(state.buffer);
                     state.cursor = state.length;
+                    renderAble = 1;
                 }
-
             } 
-
-
             // Down Arrow
             else if (seq[1] == 'B') {
                 if (historyView < historyCount) {
@@ -131,11 +174,10 @@ int main() {
                         state.length = strlen(state.buffer);
                     }
                     state.cursor = state.length;
+                    renderAble = 1;
                 }
             }
-
             break;
-
         
         // CTRL-D 
         case 4:
@@ -154,17 +196,20 @@ int main() {
                 state.buffer[state.cursor++] = character;
                 state.length++;
                 state.buffer[state.length] = '\0';
+                
+                renderAble = 1;
             }
             break;
         }
 
-        render_update(&state, old_cursor);
+        if (renderAble) {
+            render_update(&state, old_cursor);
+        }
     }
 
     disableRaw(&cookedTerminal);
     return 0;
 }
-
 
 
 
@@ -209,7 +254,7 @@ void execute(char *buffer) {
 
     
 
-
+    
     disableRaw(&cookedTerminal);
 
     
@@ -228,7 +273,6 @@ void execute(char *buffer) {
 
     } else if (pid > 0) {
         wait(NULL);
-
     }
     
     enableRaw(&cookedTerminal);

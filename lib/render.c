@@ -42,7 +42,6 @@ void render_init(ShellState *state, const char *prompt) {
     state->term_width = width();
 }
 
-
 void render_update(ShellState *state, int old_cursor) {
     state->term_width = width();
     char frame[4096];
@@ -51,21 +50,21 @@ void render_update(ShellState *state, int old_cursor) {
     append_str(frame, &pos, "\033[?25l");
 
     int prompt_len = strlen(state->prompt);
-    int start_pos = prompt_len + old_cursor;
+    int old_pos = prompt_len + old_cursor;
     
-    int start_row = start_pos / state->term_width;
-    if (start_pos > 0 && start_pos % state->term_width == 0) {
-        start_row--;
+    int old_row = old_pos / state->term_width;
+    if (old_pos > 0 && old_pos % state->term_width == 0) {
+        old_row--;
     }
 
-    for (int i = 0; i < start_row; i++) {
+    append_str(frame, &pos, "\r");
+    for (int i = 0; i < old_row; i++) {
         append_str(frame, &pos, "\033[A");
     }
     
-    append_str(frame, &pos, "\r\033[J");
-    
+
     if (state->length > 0) {
-        append_str(frame, &pos, "\033[36m");
+        append_str(frame, &pos, "\033[32;3m");
     } else {
         append_str(frame, &pos, "\033[0m");
     }
@@ -76,6 +75,10 @@ void render_update(ShellState *state, int old_cursor) {
     if (state->length > 0) {
         append_str(frame, &pos, state->buffer);
     }
+
+    append_str(frame, &pos, "\033[J");
+
+    
 
     int current_pos = prompt_len + state->cursor;
     int total_len = prompt_len + state->length;
@@ -110,4 +113,3 @@ void render_update(ShellState *state, int old_cursor) {
     
     write(STDOUT_FILENO, frame, pos);
 }
-
