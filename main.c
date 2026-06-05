@@ -234,6 +234,7 @@ void execute(char *buffer) {
     
 
     if (strcmp(argv[0], "cls") == 0 || strcmp(argv[0], "clear") == 0) {
+        write(STDOUT_FILENO, "\033c", 2);
         sout("\033[H\033[J");
         return; 
     }
