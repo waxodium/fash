@@ -1,6 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
-SRC = main.c lib/*.c
+CFLAGS = -Wall -Wextra -Werror -Iinclude -Ilib -Imodule -Icommand
+
+SRC = main.c lib/*.c module/*.c command/*.c
 TARGET = fash
 
 all: $(TARGET)
@@ -9,6 +10,7 @@ $(TARGET):
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 
 run: $(TARGET)
+	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 	./$(TARGET)
 
 clean:

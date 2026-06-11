@@ -1,7 +1,8 @@
-#include "render.h"
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include "render.h"
 
 int width() {
     struct winsize w;

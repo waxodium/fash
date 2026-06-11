@@ -7,9 +7,10 @@
 #include <errno.h>
 #include <signal.h>
 
-#include "lib/sout.h"
-#include "lib/render.h"
-#include "lib/terminal.h"
+#include "sout.h"
+#include "render.h"
+#include "terminal.h"
+#include "navigation.h"
 
 void execute(char *buffer);
 
@@ -18,10 +19,10 @@ char history[100][4096];
 int historyCount = 0;
 int historyView = 0;
 
-struct termios cookedTerminal;
+struct termios Terminal;
 
 
-void prompter(char *prompt_buffer, size_t max_len) {
+void prompter(char *prompt_buffer, size_t MaxLength) {
     char host[64];
     char cwd[1024];
     
@@ -47,10 +48,10 @@ void prompter(char *prompt_buffer, size_t max_len) {
     }
 
     if (home_length > 0 && strncmp(cwd, home, home_length) == 0) {
-        char *path_remainder = cwd + home_length;
-        snprintf(prompt_buffer, max_len, "%s@%s:~%s > ", user, host, path_remainder);
+        char *pathRemainder = cwd + home_length;
+        snprintf(prompt_buffer, MaxLength, "%s@%s:~%s > ", user, host, pathRemainder);
     } else {
-        snprintf(prompt_buffer, max_len, "%s@%s:%s > ", user, host, cwd);
+        snprintf(prompt_buffer, MaxLength, "%s@%s:%s > ", user, host, cwd);
     }
 }
 
@@ -60,7 +61,7 @@ int main() {
     char prompt[256];
     prompter(prompt, sizeof(prompt));
 
-    enableRaw(&cookedTerminal);
+    enableRaw(&Terminal);
 
     struct sigaction sa;
     sa.sa_handler = SIG_IGN;
@@ -182,7 +183,7 @@ int main() {
         // CTRL-D 
         case 4:
             sout("\r\nexit\r\n");
-            disableRaw(&cookedTerminal);
+            disableRaw(&Terminal);
             exit(0);
             break;
 
@@ -207,11 +208,28 @@ int main() {
         }
     }
 
-    disableRaw(&cookedTerminal);
+    disableRaw(&Terminal);
     return 0;
 }
 
 
+typedef int (*functionCMD)(char **argv);
+
+typedef struct {
+    const char *name;
+    functionCMD func;
+} StandardCMD;
+
+static StandardCMD CMDlist[] = {
+    {"clear", fclear},
+    {"cls",   fclear},
+    {"exit",  fexit}, 
+    {"cd", cd}
+};
+
+int listCMD(void) {
+    return sizeof(CMDlist) / sizeof(StandardCMD);
+}
 
 
 void execute(char *buffer) {
@@ -233,30 +251,15 @@ void execute(char *buffer) {
 
     
 
-    if (strcmp(argv[0], "cls") == 0 || strcmp(argv[0], "clear") == 0) {
-        write(STDOUT_FILENO, "\033c", 2);
-        sout("\033[H\033[J");
-        return; 
-    }
-    
-
-    if (strcmp(argv[0], "exit") == 0) {
-        sout("exit\r\n");
-        disableRaw(&cookedTerminal); 
-        exit(0);
-    }
-    
-
-    if (strcmp(argv[0], "cd") == 0) {
-        if (argv[1] == NULL) chdir(getenv("HOME"));
-        else if (chdir(argv[1]) != 0) sout("\rfash: cd: %s: No such file or directory\r\n", argv[1]);
-        return;
+    for (int i = 0; i < listCMD(); i++) {
+        if (strcmp(argv[0], CMDlist[i].name) == 0) {
+            CMDlist[i].func(argv); 
+            return;
+        }
     }
 
-    
-
-    
-    disableRaw(&cookedTerminal);
+        
+    disableRaw(&Terminal);
 
     
     pid_t pid = fork();
@@ -276,6 +279,6 @@ void execute(char *buffer) {
         wait(NULL);
     }
     
-    enableRaw(&cookedTerminal);
+    enableRaw(&Terminal);
 }
 
