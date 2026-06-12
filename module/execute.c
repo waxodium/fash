@@ -49,6 +49,12 @@ void execute(char *buffer) {
     if (argv[0] == NULL) return;
 
     
+    // cd parser
+    if (directory(argv[0])) {
+        char *cd_argv[] = {"cd", argv[0], NULL};
+        cd(cd_argv);
+        return;
+    }
 
     for (int i = 0; i < listCMD(); i++) {
         if (strcmp(argv[0], CMDlist[i].name) == 0) {

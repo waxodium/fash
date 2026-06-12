@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "sout.h"
@@ -40,6 +41,25 @@ void pushDirHistory(const char *path) {
     if (cdCount < MaxDir) {
         cdCount++;
     }
+}
+
+int directory(const char *InputPath) {
+    char path[4096];
+    const char *currentPath = InputPath;
+
+    if (InputPath[0] == '~') {
+        char *home = getenv("HOME");
+        if (home) {
+            snprintf(path, sizeof(path), "%s%s", home, InputPath + 1);
+            currentPath = path;
+        }
+    }
+
+    struct stat statbuf;
+    if (stat(currentPath, &statbuf) != 0)
+        return 0;
+    
+    return S_ISDIR(statbuf.st_mode);
 }
 
 int cd(char **argv) {
