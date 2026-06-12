@@ -1,18 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/wait.h>
 #include <string.h>
-#include <errno.h>
 #include <signal.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "sout.h"
 #include "render.h"
 #include "terminal.h"
-#include "navigation.h"
+#include "prompter.h"
+
 
 void execute(char *buffer);
+
 
 // Command History
 char history[100][4096];
@@ -21,39 +21,6 @@ int historyView = 0;
 
 struct termios Terminal;
 
-
-void prompter(char *prompt_buffer, size_t MaxLength) {
-    char host[64];
-    char cwd[1024];
-    
-    const char *user = getenv("USER");
-    if (!user) 
-        user = "user";
-    
-    if (gethostname(host, sizeof(host)) != 0) {
-        strcpy(host, "unknown");
-    }
-
-    if (!getcwd(cwd, sizeof(cwd))) {
-        strcpy(cwd, "?");
-    }
-
-    char *home = getenv("HOME");
-    size_t home_length;
-
-    if (home != NULL) {
-        home_length = strlen(home);
-    } else {
-        home_length = 0;
-    }
-
-    if (home_length > 0 && strncmp(cwd, home, home_length) == 0) {
-        char *pathRemainder = cwd + home_length;
-        snprintf(prompt_buffer, MaxLength, "%s@%s:~%s > ", user, host, pathRemainder);
-    } else {
-        snprintf(prompt_buffer, MaxLength, "%s@%s:%s > ", user, host, cwd);
-    }
-}
 
 int main() {
     char character;
@@ -212,73 +179,4 @@ int main() {
     return 0;
 }
 
-
-typedef int (*functionCMD)(char **argv);
-
-typedef struct {
-    const char *name;
-    functionCMD func;
-} StandardCMD;
-
-static StandardCMD CMDlist[] = {
-    {"clear", fclear},
-    {"cls",   fclear},
-    {"exit",  fexit}, 
-    {"cd", cd}
-};
-
-int listCMD(void) {
-    return sizeof(CMDlist) / sizeof(StandardCMD);
-}
-
-
-void execute(char *buffer) {
-    char cmd[4096];
-    strncpy(cmd, buffer, sizeof(cmd) - 1);
-    cmd[sizeof(cmd) - 1] = '\0';
-
-    char *argv[1024];
-    int b = 0;
-    char *token = strtok(cmd, " ");
-    
-    while (token != NULL && b < 1023) {
-        argv[b++] = token;
-        token = strtok(NULL, " ");
-    }
-    argv[b] = NULL;
-
-    if (argv[0] == NULL) return;
-
-    
-
-    for (int i = 0; i < listCMD(); i++) {
-        if (strcmp(argv[0], CMDlist[i].name) == 0) {
-            CMDlist[i].func(argv); 
-            return;
-        }
-    }
-
-        
-    disableRaw(&Terminal);
-
-    
-    pid_t pid = fork();
-    if (pid == 0) {
-        struct sigaction sa;
-        sa.sa_handler = SIG_DFL;
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = 0;
-        sigaction(SIGINT, &sa, NULL);
-
-        execvp(argv[0], argv);
-        if (errno == ENOENT) 
-            sout("\rfash: %s: command not found\r\n", argv[0]);
-        exit(1);
-
-    } else if (pid > 0) {
-        wait(NULL);
-    }
-    
-    enableRaw(&Terminal);
-}
 
