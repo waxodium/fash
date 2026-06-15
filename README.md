@@ -36,7 +36,7 @@ After installing:
 fash
 ```
 
-or if you chose not to install, just run the built binary named fcsh
+or if you chose not to install, just run the built binary named fash
 ```
 ./fash
 ```
