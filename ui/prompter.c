@@ -1,7 +1,4 @@
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
+#include "fash.h"
 
 void prompter(char *prompt_buffer, size_t MaxLength) {
     char host[64];

@@ -1,5 +1,4 @@
-#include <termios.h>
-#include <unistd.h>
+#include "fash.h"
 
 void enableRaw(struct termios *orgTerminal) {
     struct termios rawTerminal;

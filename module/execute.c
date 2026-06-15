@@ -1,9 +1,4 @@
-#include <string.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <errno.h>
-#include <signal.h>
-#include <stdlib.h>
+#include "fash.h"
 
 #include "navigation.h"
 #include "sout.h"

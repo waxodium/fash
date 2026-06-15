@@ -1,14 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <termios.h>
-#include <stdbool.h>
-#include <libgen.h>
-#include <sys/stat.h>
-#include <pwd.h>
-#include <poll.h>
+#include "fash.h"
 
 #include "render.h"
 

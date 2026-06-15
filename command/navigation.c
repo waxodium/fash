@@ -1,9 +1,4 @@
-#include <glob.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "fash.h"
 
 #include "sout.h"
 #include "tree.h"
