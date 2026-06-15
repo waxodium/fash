@@ -1,8 +1,11 @@
 # fash (Fast Again Shell)
-A fast and furious C-shell that belongs to Bourne family, made for Unix/Linux platform.
+Fash is a fast paced C-shell that belongs to Bourne family, made for Unix/Linux platform
 
 > [!NOTE]
-> Experimental & in early concept development.
+> Still working on it..
+> Expect breaking changes!
+<img width="204" height="192" alt="construction" src="https://github.com/user-attachments/assets/b39bf03f-1b5b-410c-ac64-e953735b936a" />
+
 
 ## Build & Install
 
@@ -24,7 +27,7 @@ Other Makefile target rules:
 ### Install fash
 Manually move fash to the `/usr/bin` directory
 ```
-sudo mv fash /usr/bin/
+sudo mv build/fash /usr/bin/
 ```
 
 ### Run
@@ -38,6 +41,8 @@ or if you chose not to install, just run the built binary named fcsh
 ./fash
 ```
 
+## Availability
+Fash doesn't have repository on any package manager registry. The only source is on this repository you're reading, RIGHT NOW.
 
 ## Releases
 None
