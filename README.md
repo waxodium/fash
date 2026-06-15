@@ -54,7 +54,7 @@ Undocumented
 Undocumented
 
 ## License
-[fcsh] is [MIT] Licensed
+[fash] is [MIT] Licensed
 
 
 [fash]: https://github.com/waxodium/fash
