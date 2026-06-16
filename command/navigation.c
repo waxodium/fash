@@ -1,4 +1,4 @@
-#include "fash.h"
+#include "turgen.h"
 
 #include "sout.h"
 #include "tree.h"
@@ -71,13 +71,13 @@ int cd(char **argv, ShellState *state) {
     char *old = getenv("OLDPWD");
 
     if (getcwd(current, sizeof(current)) == NULL) {
-        sout("\rfash: cd: cannot determine current directory\r\n");
+        sout("\r%s: cd: cannot determine current directory\r\n", shellname);
         return 1;
     }
 
     if (!target || strcmp(target, "~") == 0) {
         if (!home) {
-            sout("\rfash: cd: HOME not set\r\n");
+            sout("\r%s: cd: HOME not set\r\n", shellname);
             return 1;
         }
         target = home;
@@ -85,7 +85,7 @@ int cd(char **argv, ShellState *state) {
 
     if (target && strncmp(target, "~/", 2) == 0) {
         if (!home) {
-            sout("\rfash: cd: HOME not set\r\n");
+            sout("\r%s: cd: HOME not set\r\n", shellname);
             return 1;
         }
         snprintf(path, sizeof(path), "%s%s", home, target + 1);
@@ -94,7 +94,7 @@ int cd(char **argv, ShellState *state) {
 
     if (target && strcmp(target, "-") == 0) {
         if (!old) {
-            sout("\rfash: cd: OLDPWD not set\r\n");
+            sout("\r%s: cd: OLDPWD not set\r\n", shellname);
             return 1;
         }
         sout("%s\r\n", old);
@@ -106,7 +106,6 @@ int cd(char **argv, ShellState *state) {
     bool globbed = (hasglob && glob(target, 0, NULL, &match) == 0);
 
     if (globbed && match.gl_pathc > 1) {
-        sout("\rfash: Ambiguous match. Launching directory selector...\r\n");
         globfree(&match);
         
         TabTree(state); 
@@ -120,7 +119,7 @@ int cd(char **argv, ShellState *state) {
     }
 
     if (chdir(target) != 0) {
-        sout("\rfash: cd: %s: No such file or directory\r\n", argv[1]);
+        sout("\r%s: cd: %s: No such file or directory\r\n", shellname, argv[1]);
         return 1;
     }
 

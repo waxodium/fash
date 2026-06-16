@@ -1,4 +1,4 @@
-#include "fash.h"
+#include "turgen.h"
 
 #include "navigation.h"
 #include "sout.h"
@@ -77,7 +77,7 @@ void execute(char *buffer, ShellState *state) {
         execvp(argv[0], argv);
         
         if (errno == ENOENT) {
-            sout("\rfash: %s: command not found\r\n", argv[0]);
+            sout("\r%s: %s: command not found\r\n", shellname, argv[0]);
         }
         exit(1);
     }

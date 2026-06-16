@@ -16,12 +16,14 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 
-
 #include <pwd.h>
 #include <poll.h>
 #include <libgen.h>
 #include <dirent.h>
 #include <glob.h>
+
+
+#define shellname "turgen"
 
 
 #endif
