@@ -38,11 +38,17 @@ turgen
 
 or if you chose not to install, just run the built binary named turgen
 ```
+cd build/
 ./turgen
 ```
 
 ## Availability
 Turgen doesn't have repository on any package manager registry. The only source is on this repository you're reading, RIGHT NOW.
+
+turgen will **soon** have installable packages through
+- AUR (Arch User Repository)
+- DNF (Dandified YUM)
+
 
 ## Releases
 None
