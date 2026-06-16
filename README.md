@@ -58,5 +58,5 @@ Undocumented
 
 
 [turgen]: https://github.com/waxodium/turgen
-[MIT]: https://github.com/waxodium/fcsh/blob/main/LICENSE
+[MIT]: https://github.com/waxodium/turgen/blob/main/LICENSE
 
