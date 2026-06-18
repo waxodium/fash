@@ -1,5 +1,10 @@
 #ifndef PATHS
 #define PATHS
 
-bool tokenPath(const char *token);
+#include <stddef.h>
+
+void joinPath(char *destination, size_t size, const char *base, const char *name);
+
+void unrootPath(char *path);
+
 #endif

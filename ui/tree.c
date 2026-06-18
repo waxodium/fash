@@ -1,6 +1,8 @@
 #include "turgen.h"
 
 #include "render.h"
+#include "paths.h"
+
 
 #define DEPTH 32
 #define ENTRIES 512
@@ -17,18 +19,6 @@ typedef struct {
 static direntry listDir[ENTRIES];
 static int count = 0;
 
-void joinPath(char *dest, size_t size, const char *base, const char *name) {
-    size_t base_len = strlen(base);
-    
-    if (base_len > 0 && base[base_len - 1] == '/') {
-        snprintf(dest, size, "%s%s", base, name);
-
-    } else {
-        snprintf(dest, size, "%s/%s", base, name);
-
-    }
-
-}
 
 void ScanDirectories(const char *base_path, int depth, bool *last) {
     if (depth >= DEPTH || count >= ENTRIES) {

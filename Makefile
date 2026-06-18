@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -Iinclude -Ilib -Imodule -Icommand -Iui
 
-SRC    = main.c $(wildcard lib/*.c) $(wildcard module/*.c) $(wildcard command/*.c) $(wildcard ui/*.c)
+SRC    = main.c $(wildcard lib/*.c) $(wildcard module/*.c) $(wildcard command/*.c) $(wildcard ui/*.c) $(wildcard parser/*.c)
 BUILD = ./build
 TARGET = $(BUILD)/turgen
 
