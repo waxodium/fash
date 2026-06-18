@@ -1,3 +1,4 @@
+// terminal.c
 #include "turgen.h"
 
 void enableRaw(struct termios *orgTerminal) {

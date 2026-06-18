@@ -1,8 +1,5 @@
 // globs.c
 #include "turgen.h"
-#include <glob.h>
-#include <stdlib.h>
-#include <string.h>
 
 typedef struct {
     char **paths;
