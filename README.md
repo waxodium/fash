@@ -6,8 +6,6 @@ Turgen Shell is a C-Shell made for fast-paced and convenient usage, for Unix/Lin
 > Expect breaking changes!
 <img width="204" height="192" alt="construction" src="https://github.com/user-attachments/assets/b39bf03f-1b5b-410c-ac64-e953735b936a" />
 
-### Overview 
-
 ## Install
 
 ### Build Turgen
