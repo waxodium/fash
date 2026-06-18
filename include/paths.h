@@ -5,6 +5,5 @@
 
 void joinPath(char *destination, size_t size, const char *base, const char *name);
 
-void unrootPath(char *path);
 
 #endif
