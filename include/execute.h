@@ -2,6 +2,7 @@
 #define EXECUTE
 
 #include "navigation.h"
+#include "echo.h"
 
 typedef int (*Handler)(char **, ShellState *);
 
@@ -14,7 +15,8 @@ static Command builtins[] = {
     {"clear", tclear},
     {"cls",   tclear},
     {"exit",  texit}, 
-    {"cd",    cd}
+    {"cd",    cd},
+    {"echo", echo}
 };
 
 #endif
