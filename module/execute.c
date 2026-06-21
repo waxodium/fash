@@ -6,6 +6,9 @@
 
 #include "execute.h"
 
+// Parser
+#include "quote.h"
+
 
 
 int total(void) {
@@ -26,6 +29,10 @@ void execute(char *buffer, ShellState *state) {
         token = strtok(NULL, " ");
     }
     argv[argc] = NULL;
+
+    for (int i = 0; i < argc; i++) {
+        strip(argv[i]);
+    }
 
     if (argc == 0) return;
 
@@ -51,6 +58,8 @@ void execute(char *buffer, ShellState *state) {
             return;
         }
     }
+
+
 
     char *finalArgv[1024];
     int finalArgc = 0;
