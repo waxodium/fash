@@ -37,9 +37,13 @@ turgen will **soon** have installable packages through
 - AUR (Arch User Repository)
 - DNF (Dandified YUM)
 
-## License
-[Turgen] is Open, and is setted as [MIT] Licensed. See the [LICENSE](./LICENSE) file for details
+## Legal NOTICE with LICENSE
+This software, [Turgen], is proprietary-licensed content made available exclusively under the terms and conditions of the [GNU Affero General Public License v3.0]. Any modification, distribution, or network-based service deployment of this software is strictly conditioned upon full compliance with the aforementioned license. All rights reserved by the authors.
+
+
+--- 
 
 [turgen]: https://github.com/waxodium/turgen
-[MIT]: https://github.com/waxodium/turgen/blob/main/LICENSE
+[GNU Affero General Public License v3.0]: https://github.com/waxodium/turgen/blob/main/LICENSE
+
 
