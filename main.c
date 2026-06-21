@@ -3,7 +3,7 @@
 ///##########################################################################///
 
 turgen shell
-Copyright (C) 2026 waxodium
+Copyright (C) 2026 waxodium <waxodium@proton.me>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
