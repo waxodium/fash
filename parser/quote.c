@@ -85,6 +85,31 @@ char **tokenize(char *input) {
                 }
             } 
             
+            // add tokenizing for pipe and file redirection
+            else if (c == '>' || c == '<' || c == '|' || c == '&')
+            {
+                if (active)
+                {
+                    *writer++ = '\0';
+                    active = false;
+                }
+
+                args[count++] = writer;
+
+                *writer++ = c;
+
+                if ((c == '>' || c == '<') && (*(reader + 1) == c || *(reader + 1) == '&'))
+                {
+                    reader++;
+                    *writer++ = *reader;
+                }
+
+                *writer++ = '\0';
+
+                reader++;
+                continue;
+            }
+
             else if (c == '"' || c == '\'') {
                 quote = c;    
                 
@@ -92,8 +117,6 @@ char **tokenize(char *input) {
                     args[count++] = writer;
                     active = true;
                 }
-
-
             } 
             
             else {
@@ -111,6 +134,18 @@ char **tokenize(char *input) {
         *writer = '\0';
     }
 
+    // // debug 
+    // printf("Final buffer:\n");
+    // for(char *p = input; p < writer + 5; p++)
+    // {
+    //     if(*p == '\0')
+    //         printf("\\0");
+    //     else
+    //         putchar(*p);
+    // }
+    // printf("\n");
+    // // debug end 
+    
     args[count] = NULL; 
 
     return args;

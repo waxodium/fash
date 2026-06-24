@@ -1,5 +1,6 @@
 #include "turgen.h"
-
+#include <fcntl.h>
+#include <unistd.h>
 #include "sout.h"
 #include "terminal.h"
 #include "globs.h"
@@ -23,6 +24,14 @@ void execute(char *buffer, ShellState *state) {
     copy[sizeof(copy) - 1] = '\0';
 
     char **argv = tokenize(copy);
+    
+    // debug to see token 
+    for(int i = 0; argv[i] != NULL; i++)
+    {
+        printf("[%s]\n", argv[i]);
+    }
+    // debug end
+    
     if (!argv) return;
 
     int argc = 0;
@@ -93,6 +102,55 @@ void execute(char *buffer, ShellState *state) {
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
         sigaction(SIGINT, &sa, NULL);
+        for (int i = 0; finalArgv[i] != NULL; i++)
+        {
+            if (strcmp(finalArgv[i], ">") == 0)
+            {
+                int fd = open(finalArgv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd < 0)
+                {
+                    exit(1);
+                }
+
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+
+                finalArgv[i] = NULL;
+                break;
+            }
+
+            else if (strcmp(finalArgv[i], ">>") == 0)
+            {
+                int fd = open(finalArgv[i + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+                if (fd < 0)
+                {
+                    exit(1);
+                }
+
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+
+                finalArgv[i] = NULL;
+                break;
+            }
+
+            else if (strcmp(finalArgv[i], "<") == 0)
+            {
+                int fd = open(finalArgv[i + 1], O_RDONLY);
+
+                if (fd < 0)
+                {
+                    exit(1);
+                }
+
+                dup2(fd, STDIN_FILENO);
+                close(fd);
+
+                finalArgv[i] = NULL;
+                break;
+            }
+        }
 
         execvp(finalArgv[0], finalArgv);
 
