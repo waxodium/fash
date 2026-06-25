@@ -1,6 +1,5 @@
 #include "turgen.h"
-#include <fcntl.h>
-#include <unistd.h>
+
 #include "sout.h"
 #include "terminal.h"
 #include "globs.h"
@@ -9,29 +8,26 @@
 
 // Parser
 #include "quote.h"
-
+#include "operator.h"
+#include "redirect.h"
 
 
 int total(void) {
     return sizeof(builtins) / sizeof(Command);
 }
 
+
 void execute(char *buffer, ShellState *state) {
     if (buffer == NULL || strlen(buffer) == 0) return;
 
-    char copy[4096];
-    strncpy(copy, buffer, sizeof(copy) - 1);
-    copy[sizeof(copy) - 1] = '\0';
+    char *padded = opsing(buffer);
+    if (!padded) return;
 
-    char **argv = tokenize(copy);
-    
-    // debug to see token 
-    for(int i = 0; argv[i] != NULL; i++)
-    {
-        printf("[%s]\n", argv[i]);
+    char **argv = tokenize(padded);
+    if (!argv) {
+        free(padded);
+        return;
     }
-    // debug end
-    
     if (!argv) return;
 
     int argc = 0;
@@ -44,6 +40,24 @@ void execute(char *buffer, ShellState *state) {
         return;
     }
 
+    
+    // redirection
+    bool routing = false;
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "|") == 0 || strcmp(argv[i], "<") == 0 || 
+            strcmp(argv[i], ">") == 0 || strcmp(argv[i], ">>") == 0) 
+        {
+            routing = true;
+            break;
+        }
+    }
+
+    if (routing) {
+        redirect(argv, argc, state);
+        free(argv);
+        return;
+    }
+
     char *command = argv[0];
     bool pathTarget = (strchr(command, '/') != NULL) || 
                       (command[0] == '~') || 
@@ -51,7 +65,7 @@ void execute(char *buffer, ShellState *state) {
                       (strcmp(command, "..") == 0);
 
     if (pathTarget) {
-        char *cdArgv[] = {"cd", command, NULL};
+        char *cdArgv[] = { "cd", command, NULL };
         for (int i = 0; i < total(); i++) {
             if (strcmp(builtins[i].name, "cd") == 0) {
                 builtins[i].func(cdArgv, state);
@@ -69,7 +83,6 @@ void execute(char *buffer, ShellState *state) {
         }
     }
 
-    
     char *finalArgv[1024];
     int finalArgc = 0;
 
@@ -85,6 +98,9 @@ void execute(char *buffer, ShellState *state) {
             }
         }
     }
+    
+
+
     finalArgv[finalArgc] = NULL;
 
     disableRaw(&Terminal);
@@ -102,55 +118,6 @@ void execute(char *buffer, ShellState *state) {
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
         sigaction(SIGINT, &sa, NULL);
-        for (int i = 0; finalArgv[i] != NULL; i++)
-        {
-            if (strcmp(finalArgv[i], ">") == 0)
-            {
-                int fd = open(finalArgv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                if (fd < 0)
-                {
-                    exit(1);
-                }
-
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
-
-                finalArgv[i] = NULL;
-                break;
-            }
-
-            else if (strcmp(finalArgv[i], ">>") == 0)
-            {
-                int fd = open(finalArgv[i + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
-
-                if (fd < 0)
-                {
-                    exit(1);
-                }
-
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
-
-                finalArgv[i] = NULL;
-                break;
-            }
-
-            else if (strcmp(finalArgv[i], "<") == 0)
-            {
-                int fd = open(finalArgv[i + 1], O_RDONLY);
-
-                if (fd < 0)
-                {
-                    exit(1);
-                }
-
-                dup2(fd, STDIN_FILENO);
-                close(fd);
-
-                finalArgv[i] = NULL;
-                break;
-            }
-        }
 
         execvp(finalArgv[0], finalArgv);
 

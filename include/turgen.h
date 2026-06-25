@@ -16,15 +16,19 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 
 #include <pwd.h>
 #include <poll.h>
 #include <libgen.h>
 #include <dirent.h>
 #include <glob.h>
+#include <fcntl.h>
 
 
 #define shellname "turgen"
 
+
+extern struct termios Terminal;
 
 #endif

@@ -104,8 +104,8 @@ examples from source code:
 sout("\r%s: %s: command not found\r\n", shellname, finalArgv[0]);
 ```
 
-### Prohibition of `printf()` and `fprintf()`
-- Do NOT use: `printf()`, `fprintf()`, `sprintf()`, or any related standard.
+### Prohibition of `printf()`
+- Do NOT use: `printf()`
 - Must use: `write()` **(system call)** or the custom wrapper function `sout()`.
 
 `sout()` is forwarded from an external library. Learn more about library from Source: https://github.com/waxodium/sout
@@ -160,4 +160,5 @@ static Command builtins[] = {
 > If a command is named after another existing command name on any machine. Turgen will prioritize on checking the built-in commands and *entirely* while also *purposely* ignore the conflicting binary or an alias name.
 
 ---
+
 
