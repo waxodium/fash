@@ -6,16 +6,25 @@
 
 #include "execute.h"
 
-// Parser
 #include "quote.h"
 #include "operator.h"
 #include "redirect.h"
-
 
 int total(void) {
     return sizeof(builtins) / sizeof(Command);
 }
 
+/* redirecting */
+static bool routing(char **argv, int argc, ShellState *state);
+
+// builtin commands
+static bool internal(char *command, char **argv, ShellState *state);
+
+// glob expanding
+static int expanding(char **argv, int argc, char **final);
+
+// external commands
+static void external(char **final);
 
 void execute(char *buffer, ShellState *state) {
     if (buffer == NULL || strlen(buffer) == 0) return;
@@ -28,48 +37,64 @@ void execute(char *buffer, ShellState *state) {
         free(padded);
         return;
     }
-    if (!argv) return;
 
     int argc = 0;
-    while (argv[argc] != NULL) {
-        argc++;
-    }
+    while (argv[argc] != NULL) argc++;
 
     if (argc == 0) {
         free(argv);
         return;
     }
 
-    
-    // redirection
-    bool routing = false;
-    for (int i = 0; i < argc; i++) {
-        if (strcmp(argv[i], "|") == 0 || strpbrk(argv[i], "<>") != NULL) {
-            routing = true;
-            break;
-        }
-    }
-
-    if (routing) {
-        redirect(argv, argc, state);
+    if (routing(argv, argc, state)) {
         free(argv);
         return;
     }
 
+    if (internal(argv[0], argv, state)) {
+        free(argv);
+        return;
+    }
 
-    char *command = argv[0];
-    bool pathTarget = (strchr(command, '/') != NULL) || 
-                      (command[0] == '~') || 
-                      (strlen(command) > 0 && command[strlen(command) - 1] == '/') || 
-                      (strcmp(command, "..") == 0);
+    char *final[1024];
+    expanding(argv, argc, final);
+    external(final);
 
-    if (pathTarget) {
-        char *cdArgv[] = { "cd", command, NULL };
+    free(argv);
+}
+
+
+static bool routing(char **argv, int argc, ShellState *state) {
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "|") == 0 || strpbrk(argv[i], "<>") != NULL) {
+            redirect(argv, argc, state);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+static bool internal(char *command, char **argv, ShellState *state) {
+    bool target = false;
+    
+    if (strchr(command, '/') != NULL) {
+        target = true;
+    } else if (command[0] == '~') {
+        target = true;
+    } else if (strlen(command) > 0 && command[strlen(command) - 1] == '/') {
+        target = true;
+    } else if (strcmp(command, "..") == 0) {
+        target = true;
+    }
+
+    if (target) {
+        char *args[] = { "cd", command, NULL };
         for (int i = 0; i < total(); i++) {
             if (strcmp(builtins[i].name, "cd") == 0) {
-                builtins[i].func(cdArgv, state);
-                free(argv);
-                return;
+                builtins[i].func(args, state);
+                return true;
             }
         }
     }
@@ -77,36 +102,36 @@ void execute(char *buffer, ShellState *state) {
     for (int i = 0; i < total(); i++) {
         if (strcmp(command, builtins[i].name) == 0) {
             builtins[i].func(argv, state);
-            free(argv);
-            return;
+            return true;
         }
     }
 
-    char *finalArgv[1024];
-    int finalArgc = 0;
+    return false;
+}
 
+static int expanding(char **argv, int argc, char **final) {
+    int count = 0;
     for (int i = 0; i < argc; i++) {
         if (strchr(argv[i], '*') || strchr(argv[i], '?')) {
-            GlobResult result = globbing(argv[i]);
-            for (int j = 0; j < result.count && finalArgc < 1023; j++) {
-                finalArgv[finalArgc++] = result.paths[j];
+            GlobResult match = globbing(argv[i]);
+            for (int j = 0; j < match.count && count < 1023; j++) {
+                final[count++] = match.paths[j];
             }
         } else {
-            if (finalArgc < 1023) {
-                finalArgv[finalArgc++] = argv[i];
+            if (count < 1023) {
+                final[count++] = argv[i];
             }
         }
     }
-    
+    final[count] = NULL;
+    return count;
+}
 
-
-    finalArgv[finalArgc] = NULL;
-
+static void external(char **final) {
     disableRaw(&Terminal);
 
     pid_t pid = fork();
     if (pid < 0) {
-        free(argv); 
         enableRaw(&Terminal);
         return;
     }
@@ -118,16 +143,16 @@ void execute(char *buffer, ShellState *state) {
         sa.sa_flags = 0;
         sigaction(SIGINT, &sa, NULL);
 
-        execvp(finalArgv[0], finalArgv);
+        execvp(final[0], final);
 
         if (errno == ENOENT) {
-            sout("\r%s: %s: command not found\r\n", shellname, finalArgv[0]);
+            sout("\r%s: %s: command not found\r\n", shellname, final[0]);
         }
         exit(1);
     }
 
     wait(NULL);
     enableRaw(&Terminal);
-
-    free(argv);
 }
+
+
