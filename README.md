@@ -37,7 +37,7 @@ turgen will **soon** have installable packages through
 - AUR (Arch User Repository)
 - DNF (Dandified YUM)
 
-## Legal NOTICE with LICENSE
+## LICENSE
 This software, [Turgen], is proprietary-licensed content made available exclusively under the terms and conditions of the [GNU Affero General Public License v3.0]. Any modification, distribution, or network-based service deployment of this software is strictly conditioned upon full compliance with the aforementioned license. All rights reserved by the authors.
 
 

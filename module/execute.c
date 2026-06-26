@@ -44,9 +44,7 @@ void execute(char *buffer, ShellState *state) {
     // redirection
     bool routing = false;
     for (int i = 0; i < argc; i++) {
-        if (strcmp(argv[i], "|") == 0 || strcmp(argv[i], "<") == 0 || 
-            strcmp(argv[i], ">") == 0 || strcmp(argv[i], ">>") == 0) 
-        {
+        if (strcmp(argv[i], "|") == 0 || strpbrk(argv[i], "<>") != NULL) {
             routing = true;
             break;
         }
@@ -57,6 +55,7 @@ void execute(char *buffer, ShellState *state) {
         free(argv);
         return;
     }
+
 
     char *command = argv[0];
     bool pathTarget = (strchr(command, '/') != NULL) || 

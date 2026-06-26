@@ -14,126 +14,184 @@
 
 void redirect(char **argv, int argc, ShellState *state) {
     (void) *state;
-    int inputFd = 0; 
-    int index = 0;
+    int stream = 0; 
+    int cursor = 0;
 
-    while (index < argc) {
-        char *cmdArgv[1024];
-        int cmdArgc = 0;
-        char *inputFile = NULL;
-        char *outputFile = NULL;
-        int append = 0;
+    while (cursor < argc) {
+        char *args[1024];
+        int count = 0;
         int piped = 0;
 
-        while (index < argc) {
-            if (strcmp(argv[index], "|") == 0) {
+        struct {
+            int source;
+            int merge;
+            int finish;
+            int target;
+            char *file;
+            int append;
+            int input;
+        } redirs[32];
+        int total = 0;
+
+        while (cursor < argc) {
+            char *word = argv[cursor];
+
+            if (strcmp(word, "|") == 0) {
                 piped = 1;
-                index++;
+                cursor++;
                 break;
-            } else if (strcmp(argv[index], "<") == 0) {
-                inputFile = argv[index + 1];
-                index += 2;
-            } else if (strcmp(argv[index], ">") == 0) {
-                outputFile = argv[index + 1];
-                append = 0;
-                index += 2;
-            } else if (strcmp(argv[index], ">>") == 0) {
-                outputFile = argv[index + 1];
-                append = 1;
-                index += 2;
-            } else {
-                cmdArgv[cmdArgc++] = argv[index];
-                index++;
+            } 
+
+            char *marker = strpbrk(word, "<>");
+            if (marker == NULL) {
+                args[count++] = word;
+                cursor++;
+                continue;
+            }
+
+            int local = 1;
+            if (*marker == '<') {
+                local = 0;
+            }
+            
+            if (marker > word && isdigit((unsigned char)word[0])) {
+                local = atoi(word);
+            }
+
+            if (*(marker + 1) == '&') {
+                redirs[total].source = local;
+                
+                if (*(marker + 2) == '-') {
+                    redirs[total].merge = 0;
+                    redirs[total].finish = 1;
+                    cursor += 1;
+                }
+                else if (*(marker + 2) != '\0') {
+                    redirs[total].merge = 1;
+                    redirs[total].finish = 0;
+                    redirs[total].target = atoi(marker + 2);
+                    cursor += 1;
+                } 
+                else {
+                    redirs[total].merge = 1;
+                    redirs[total].finish = 0;
+                    if (cursor + 1 < argc) {
+                        redirs[total].target = atoi(argv[cursor + 1]);
+                        cursor += 2;
+                    } else {
+                        cursor += 1;
+                    }
+                }
+                total++;
+            } 
+            else {
+                redirs[total].source = local;
+                redirs[total].merge = 0;
+                redirs[total].finish = 0;
+                
+                redirs[total].input = 0;
+                if (*marker == '<') {
+                    redirs[total].input = 1;
+                }
+
+                redirs[total].append = 0;
+                if (*(marker + 1) == '>') {
+                    redirs[total].append = 1;
+                }
+
+                redirs[total].file = argv[cursor + 1];
+                cursor += 2;
+                total++;
             }
         }
-        cmdArgv[cmdArgc] = NULL;
+        args[count] = NULL;
 
-        if (cmdArgc == 0) continue;
+        if (count == 0) continue;
 
-        int pipeFds[2];
+        int links[2];
         if (piped) {
-            if (pipe(pipeFds) < 0) {
-                perror("pipe");
-                return;
-            }
+            if (pipe(links) < 0) { perror("pipe"); return; }
         }
 
         disableRaw(&Terminal);
 
-        pid_t pid = fork();
-        if (pid < 0) {
-            perror("fork");
-            enableRaw(&Terminal);
-            return;
-        }
+        pid_t child = fork();
+        if (child < 0) { perror("fork"); enableRaw(&Terminal); return; }
 
-        if (pid == 0) {
-            struct sigaction sa;
-            sa.sa_handler = SIG_DFL;
-            sigemptyset(&sa.sa_mask);
-            sa.sa_flags = 0;
-            sigaction(SIGINT, &sa, NULL);
-
-            if (inputFd != 0) {
-                dup2(inputFd, 0);
-                close(inputFd);
-            }
+        if (child != 0) {
+            if (stream != 0) close(stream);
 
             if (piped) {
-                dup2(pipeFds[1], 1);
-                close(pipeFds[0]);
-                close(pipeFds[1]);
-            }
-
-            if (inputFile) {
-                int fdIn = open(inputFile, O_RDONLY);
-                if (fdIn < 0) {
-                    perror("open input");
-                    exit(1);
-                }
-                dup2(fdIn, 0);
-                close(fdIn);
-            }
-
-            if (outputFile) {
-                int flags = O_WRONLY | O_CREAT;
-                if (append) flags |= O_APPEND;
-                else flags |= O_TRUNC;
-
-                int fdOut = open(outputFile, flags, 0644);
-                if (fdOut < 0) {
-                    perror("open output");
-                    exit(1);
-                }
-                dup2(fdOut, 1);
-                close(fdOut);
-            }
-
-            execvp(cmdArgv[0], cmdArgv);
-            
-            if (errno == ENOENT) {
-                sout("\r%s: %s: command not found\r\n", shellname, cmdArgv[0]);
-            }
-            
-            exit(1);
-
-
-        } else {
-            if (inputFd != 0) {
-                close(inputFd);
-            }
-
-            if (piped) {
-                close(pipeFds[1]);
-                inputFd = pipeFds[0];
+                close(links[1]);
+                stream = links[0];
             } else {
-                inputFd = 0;
+                stream = 0;
             }
 
             int status;
-            waitpid(pid, &status, 0);
-            
+            waitpid(child, &status, 0);
             enableRaw(&Terminal);
+            continue;
         }
+
+        struct sigaction action;
+        action.sa_handler = SIG_DFL;
+        sigemptyset(&action.sa_mask);
+        action.sa_flags = 0;
+        sigaction(SIGINT, &action, NULL);
+
+        if (stream != 0) {
+            dup2(stream, 0);
+            close(stream);
+        }
+
+        if (piped) {
+            dup2(links[1], 1);
+            close(links[0]);
+            close(links[1]);
+        }
+
+        for (int step = 0; step < total; step++) {
+            if (redirs[step].finish) {
+                if (close(redirs[step].source) < 0) {
+                    perror("close fd");
+                    exit(1);
+                }
+                continue;
+            } 
+            
+            if (redirs[step].merge) {
+                if (dup2(redirs[step].target, redirs[step].source) < 0) {
+                    perror("dup2 merge");
+                    exit(1);
+                }
+                continue;
+            } 
+
+            int modes = O_WRONLY | O_CREAT | O_TRUNC;
+            if (redirs[step].input) {
+                modes = O_RDONLY;
+            } else if (redirs[step].append) {
+                modes = O_WRONLY | O_CREAT | O_APPEND;
+            }
+
+            int desk = open(redirs[step].file, modes, 0644);
+            if (desk < 0) {
+                perror("open failed");
+                exit(1);
+            }
+            if (dup2(desk, redirs[step].source) < 0) {
+                perror("dup2 file");
+                close(desk);
+                exit(1);
+            }
+            close(desk);
+        }
+
+        execvp(args[0], args);
+        if (errno == ENOENT) {
+            sout("\r%s: %s: command not found\r\n", shellname, args[0]);
+        }
+        exit(1);
     }
 }

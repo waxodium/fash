@@ -24,6 +24,7 @@
 #include <dirent.h>
 #include <glob.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 
 #define shellname "turgen"
