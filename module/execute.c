@@ -10,6 +10,7 @@
 #include "operator.h"
 #include "redirect.h"
 #include "paths.h"
+#include "seperator.h"
 
 int total(void) {
     return sizeof(builtins) / sizeof(Command);
@@ -27,7 +28,15 @@ static bool routing(char **argv, int argc, ShellState *state) {
     return false;
 }
 
-
+static bool semicolon(char **argv, int argc, ShellState *state) {
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], ";") == 0) {
+            seperate(argv, argc, state);
+            return true;
+        }
+    }
+    return false;
+}
 
 
 static bool internal(char *command, char **argv, ShellState *state) {
@@ -154,10 +163,17 @@ void execute(char *buffer, ShellState *state) {
         return;
     }
 
+    if(semicolon(argv, argc, state)) {
+        free(argv);
+        return;
+    }
+
+
     if (internal(argv[0], argv, state)) {
         free(argv);
         return;
     }
+
 
     char *final[1024];
     expanding(argv, argc, final);
