@@ -5,7 +5,7 @@
 #include "globs.h"
 #include "execute.h"
 
-#include "quote.h"
+#include "operator.h"
 #include "redirect.h"
 #include "paths.h"
 #include "seperator.h"
