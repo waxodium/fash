@@ -1,5 +1,5 @@
 # Turgen Shell
-Turgen Shell is a C-Shell made for fast-paced and convenient usage, for Unix/Linux platform
+Turgen Shell is a C-Shell made for fast-paced and convenient usage, for Unix/Linux platform.
 
 > [!NOTE]
 > Still working on it..
@@ -33,7 +33,7 @@ If you love to, please kindly take your time reading [CONTRIBUTING.md](./CONTRIB
 ## Availability
 Turgen doesn't have repository on any package manager registry. The only source is on this repository you're reading, RIGHT NOW.
 
-turgen will **soon** have installable packages through
+turgen will **soon** have installable packages through:
 - AUR (Arch User Repository)
 - DNF (Dandified YUM)
 
